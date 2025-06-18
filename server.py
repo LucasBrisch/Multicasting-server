@@ -5,6 +5,13 @@ import threading
 MULTICAST_GROUP = '224.1.1.1'
 PORT = 5007
 NOTIFY_PORT = 5008  # Nova porta para notificações de conexão
+START = False
+
+chosen = int(input("Escolha o número de usuários para iniciar o servidor (mínimo 1): "))
+quantity = int(input("Quantas mensagens deseja enviar? "))
+if chosen < 1:
+    print("Número de usuários inválido. O servidor não será iniciado.")
+    exit()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
@@ -22,29 +29,33 @@ def listen_new_users():
         if msg == "NEW_USER":
             print(f"Novo usuário conectado! Total de usuários: {cont + 1}")
             cont += 1
-            print("Pressione 's' para enviar uma mensagem ou 'q' para sair: ", end="", flush=True)
+            if cont == chosen:
+                global START
+                START = True
         elif msg == "USER_LEFT":
             print(f"Um usuário saiu! Total de usuários: {cont - 1}")
             cont -= 1
-            print("Pressione 's' para enviar uma mensagem ou 'q' para sair: ", end="", flush=True)
+            
 
 threading.Thread(target=listen_new_users, daemon=True).start()
 
 print("Servidor multicast iniciado...")
 
-try:
-    count = 0
-    while True:
-        key = input("Pressione 's' para enviar uma mensagem ou 'q' para sair: ")
-        if key.lower() == 'q':
-            print("Saindo do servidor multicast.")
-            break
-        if key.lower() == 's':
-            count += 1
-            message = f"Mensagem {count}"
-            sock.sendto(message.encode(), (MULTICAST_GROUP, PORT))
-            print(f"Enviado: {message}")
-            time.sleep(1)
+while True:
+    try:
+        count = 0
+        if START:
+            while True:
+                    count += 1
+                    message = f"Atualização {count}"
+                    sock.sendto(message.encode(), (MULTICAST_GROUP, PORT))
+                    print(f"Enviado: {message}")
+                    time.sleep(1)
+                    if count >= quantity:
+                        print("Quantidade de mensagens enviada atingida.")
+                        exit()
+                    
+                    
 
-except KeyboardInterrupt:
-        print("Servidor encerrado.")
+    except KeyboardInterrupt:
+            print("Servidor encerrado.")
