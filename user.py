@@ -10,7 +10,11 @@ SERVER_IP = '127.0.0.1'  # Altere se o servidor estiver em outro IP
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) 
+try:
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+except AttributeError:
+    pass  # Ignora se o SO_REUSEPORT não for suportado
+
 sock.bind(('', PORT)) 
 
 # Notifica o servidor sobre nova conexão
@@ -26,8 +30,9 @@ def receive_messages():
         while True:
             data, addr = sock.recvfrom(1024)
             print(f"Recebido de {addr}: {data.decode()}")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Erro ao receber mensagem: {e}")
+
 
 print("Cliente multicast iniciado. Aguardando mensagens...")
 
